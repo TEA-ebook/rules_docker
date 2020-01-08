@@ -121,6 +121,32 @@ function find_diffbase() {
   echo "${TOTAL_DIFF_IDS[@]:0:${LEGACY_COUNT}}"
 }
 
+function find_last_existing() {
+  local IDS=()
+
+  while test $# -gt 0
+  do
+    local diff_id="$(cat "${RUNFILES}/$1")"
+    IDS+=("\"sha256:${diff_id}\"")
+    shift 2
+  done
+
+  for i in $(seq "${#IDS[@]}" -1 1)
+  do
+    if sequence_exists "${IDS[@]}"; then
+      # This sequence of diff-ids has not been seen,
+      # so we must start by making this layer part of
+      # the tarball we load.
+      echo $i
+      exit
+    fi
+
+    unset 'IDS[${#IDS[@]}-1]'
+  done
+
+  echo 0
+}
+
 function import_config() {
   # Create an image from the image configuration file.
   local name="${RUNFILES}/$1"
@@ -153,20 +179,13 @@ function import_config() {
 
   # Starting from our legacy diffbase, figure out which
   # additional layers the Docker daemon already has.
-  while test $# -gt 0
-  do
+  EXISTING=$(find_last_existing "$@")
+
+  for _ in $(seq $EXISTING); do
     local diff_id="$(cat "${RUNFILES}/$1")"
     local layer="${RUNFILES}/$2"
 
     DIFF_IDS+=("\"sha256:${diff_id}\"")
-
-    if ! sequence_exists "${DIFF_IDS[@]}"; then
-      # This sequence of diff-ids has not been seen,
-      # so we must start by making this layer part of
-      # the tarball we load.
-      break
-    fi
-
     ALL_QUOTED+=("\"${diff_id}.tar\"")
     shift 2
   done

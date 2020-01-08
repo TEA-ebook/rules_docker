@@ -112,7 +112,12 @@ def get_from_target(ctx, name, attr_target, file_target = None):
        The extracted layers
     """
     if file_target:
-        return _extract_layers(ctx, name, file_target)
+        if ImageInfo in file_target:
+             return file_target[ImageInfo].container_parts
+        elif ImportInfo in file_target:
+             return file_target[ImportInfo].container_parts
+        else:
+            return _extract_layers(ctx, name, file_target)
     elif attr_target and ImageInfo in attr_target:
         return attr_target[ImageInfo].container_parts
     elif attr_target and ImportInfo in attr_target:
