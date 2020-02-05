@@ -126,7 +126,7 @@ def _default_symlinks(dep):
     else:
         return dep[DefaultInfo].default_runfiles.symlinks
 
-def _app_layer_impl(ctx, runfiles = None, emptyfiles = None, entrypoint = None):
+def _app_layer_impl(ctx, runfiles = None, emptyfiles = None, entrypoint = None, env = {}):
     """Appends a layer for a single dependency's runfiles.
 
     Args:
@@ -232,6 +232,7 @@ def _app_layer_impl(ctx, runfiles = None, emptyfiles = None, entrypoint = None):
         empty_dirs = empty_dirs,
         symlinks = symlinks,
         workdir = workdir,
+        env = env,
         # Use entrypoint so we can easily add arguments when the resulting
         # image is `docker run ...`.
         # Per: https://docs.docker.com/engine/reference/builder/#entrypoint
