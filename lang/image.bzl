@@ -126,7 +126,7 @@ def _default_symlinks(dep):
     else:
         return dep[DefaultInfo].default_runfiles.symlinks
 
-def _app_layer_impl(ctx, runfiles = None, emptyfiles = None):
+def _app_layer_impl(ctx, runfiles = None, emptyfiles = None, entrypoint = None, env = {}):
     """Appends a layer for a single dependency's runfiles.
 
     Args:
@@ -203,18 +203,22 @@ def _app_layer_impl(ctx, runfiles = None, emptyfiles = None):
             if _final_emptyfile_path(ctx, f) not in empty_files and _final_emptyfile_path(ctx, f) not in available
         })
 
-    entrypoint = None
     if top_layer:
-        entrypoint = ctx.attr.entrypoint + [_binary_name(ctx)]
         workdir = ctx.attr.workdir or "/".join([_runfiles_dir(ctx), ctx.workspace_name])
+
         symlinks.update({
-            # Create a symlink from our entrypoint to where it will actually be put
-            # under runfiles.
-            _binary_name(ctx): _final_file_path(ctx, ctx.executable.binary),
             # Create a directory symlink from <workspace>/external to the runfiles
             # root, since they may be accessed via either path.
             _external_dir(ctx): _runfiles_dir(ctx),
         })
+
+        if entrypoint == None:
+            entrypoint = ctx.attr.entrypoint + [_binary_name(ctx)]
+            symlinks.update({
+                # Create a symlink from our entrypoint to where it will actually be put
+                # under runfiles.
+                _binary_name(ctx): _final_file_path(ctx, ctx.executable.binary),
+            })
 
     # args of the form $(location :some_target) are expanded to the path of the underlying file
     args = [ctx.expand_location(arg, ctx.attr.data) for arg in ctx.attr.args]
@@ -228,6 +232,7 @@ def _app_layer_impl(ctx, runfiles = None, emptyfiles = None):
         empty_dirs = empty_dirs,
         symlinks = symlinks,
         workdir = workdir,
+        env = env,
         # Use entrypoint so we can easily add arguments when the resulting
         # image is `docker run ...`.
         # Per: https://docs.docker.com/engine/reference/builder/#entrypoint
