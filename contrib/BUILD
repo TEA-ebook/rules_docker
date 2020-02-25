@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+
 package(default_visibility = ["//visibility:public"])
 
 licenses(["notice"])  # Apache 2.0
@@ -55,4 +57,12 @@ alias(
         "@bazel_tools//src/conditions:darwin_x86_64": "@structure_test_darwin//file",
         "//conditions:default": "@structure_test_linux//file",
     }),
+)
+
+bzl_library(
+    name = "test",
+    srcs = ["test.bzl"],
+    deps = [
+       "//container:bundle",
+    ],
 )
